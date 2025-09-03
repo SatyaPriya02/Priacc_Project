@@ -5,7 +5,12 @@ import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/axiosInstance";
 import { io } from "socket.io-client";
-const socket = io(import.meta.env.VITE_API_URL); //
+
+const socket = io(import.meta.env.VITE_API_URL, {
+  path: "/api/socket.io",
+  transports: ["websocket", "polling"]
+});
+
 
 const th = { textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 };
 const td = { borderBottom: "1px solid #eee", padding: 8 };
