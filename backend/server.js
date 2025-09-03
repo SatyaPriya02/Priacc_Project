@@ -97,6 +97,7 @@
 
 
 // server.js
+// server.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -125,64 +126,75 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Define allowed origins
+// ✅ Allowed origins
 const allowedOrigins = [
-   "http://localhost:5173",  // Vite dev frontend
-  "http://54.193.241.233",
-  "https://priaccinnovations.online"
+  "http://localhost:5173",       // Vite dev
+  "http://54.193.241.233",       // server IP
+  "https://priaccinnovations.online" // your domain
 ];
 
-// ✅ CORS for Express APIs
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true
-}));
+// ✅ CORS for APIs
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// ✅ Socket.IO setup with same CORS rules
+// ✅ Socket.IO setup (mounted at /api/socket.io)
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
-  path: "/api/socket.io"   // 👈 add this line
+  path: "/api/socket.io",
 });
-
 app.set("io", io);
 
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
-  socket.on("disconnect", () => console.log("❌ Client disconnected:", socket.id));
+  socket.on("disconnect", () =>
+    console.log("❌ Client disconnected:", socket.id)
+  );
 });
 
-app.get("/", (req, res) => res.send("Employee Attendance API is running 🚀"));
+// ✅ Routes
+app.get("/", (req, res) =>
+  res.send("Employee Attendance API is running 🚀")
+);
 
-// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", attendanceRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/file", fileRoutes);
 
-// error handlers
+// ✅ Error handlers
 app.use(notFound);
 app.use(errorHandler);
+
+// ✅ Serve frontend build (single server setup)
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "../frontend/dist", "index.html"));
+});
 
 const PORT = process.env.PORT || 2000;
 
 connectDB(process.env.MONGO_URI)
   .then(async () => {
-    // --- Boss seeding ---
+    // --- Seed boss user if not exists ---
     const ADMIN_EMP_ID = process.env.ADMIN_EMP_ID || "BOSS";
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "ChangeMe123!";
     const ADMIN_NAME = process.env.ADMIN_NAME || "Company Boss";
@@ -205,15 +217,18 @@ connectDB(process.env.MONGO_URI)
       console.error("❌ Error seeding boss user:", seedErr);
     }
 
-    server.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
+    server.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT}`)
+    );
   })
   .catch((err) => {
     console.error("❌ DB connection failed:", err);
     process.exit(1);
   });
 
-// cleanup
+// ✅ Daily cleanup
 cron.schedule("0 2 * * *", () => {
   console.log("🕑 Running daily cleanup job...");
   cleanupOldAttendancePhotos();
 });
+
