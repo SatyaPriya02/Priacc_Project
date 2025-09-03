@@ -5,7 +5,12 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/axiosInstance";
 import "./leave.css";
 import { io } from "socket.io-client";
-const socket = io(import.meta.env.VITE_API_URL);
+
+const socket = io(import.meta.env.VITE_API_URL, {
+  path: "/api/socket.io",
+  transports: ["websocket", "polling"]
+});
+
 
 export default function EmployeeLeaveApprovals() {
   const { user } = useAuth();
