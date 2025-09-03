@@ -46,7 +46,7 @@ app.get("/", (req, res) => res.send("Employee Attendance API is running 🚀"));
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/attendance", attendanceRoutes);
+app.use("/api", attendanceRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/file", fileRoutes);
 
