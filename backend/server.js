@@ -154,8 +154,10 @@ const io = new Server(server, {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  path: "/api/socket.io"   // 👈 add this line
 });
+
 app.set("io", io);
 
 io.on("connection", (socket) => {
