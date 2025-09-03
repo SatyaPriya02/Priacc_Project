@@ -1,5 +1,3 @@
-
-
 // src/pages/EmployeeLeaveApprovals.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import Navbar from "../components/Navbar";
@@ -30,13 +28,11 @@ export default function EmployeeLeaveApprovals() {
     return Math.floor(ms / (24 * 60 * 60 * 1000)) + 1; // inclusive
   };
 
-  // Backend returns EMPLOYEE requests for HR/MANAGER
   const load = async () => {
     if (!isHRorManager) return;
     setLoading(true);
     setErr("");
     try {
-      // by default, show only Pending; toggle can fetch all
       const params = showAll ? {} : { status: "Pending" };
       const { data } = await api.get("/leave/inbox", { params });
       setInbox(Array.isArray(data) ? data : []);
@@ -52,7 +48,6 @@ export default function EmployeeLeaveApprovals() {
     const newStatus = action === "approve" ? "Approved" : "Rejected";
     const note = (notes[id] || "").trim();
 
-    // optimistic update: keep row, update status, and hide buttons
     setActingId(id);
     const prev = inbox;
     setInbox((list) =>
@@ -61,7 +56,7 @@ export default function EmployeeLeaveApprovals() {
           ? {
               ...r,
               status: newStatus,
-              _justDecided: true, // ensures visibility even when "Show processed" is off
+              _justDecided: true,
             }
           : r
       )
@@ -73,14 +68,12 @@ export default function EmployeeLeaveApprovals() {
       } else {
         await api.post(`/leave/${id}/reject`, { note });
       }
-      // optional: clear the note for that row after success
       setNotes((n) => {
         const c = { ...n };
         delete c[id];
         return c;
       });
     } catch (e) {
-      // rollback if server fails
       setInbox(prev);
       alert(e?.response?.data?.message || "Action failed");
     } finally {
@@ -93,14 +86,13 @@ export default function EmployeeLeaveApprovals() {
     socket.on("leaveUpdated", load);
     socket.on("leaveCreated", load);
     return () => {
-    socket.off("leaveUpdated", load);
-    socket.off("leaveCreated", load);
-  };
+      socket.off("leaveUpdated", load);
+      socket.off("leaveCreated", load);
+    };
   }, [role, showAll]);
 
   const visibleRows = useMemo(() => {
     if (showAll) return inbox || [];
-    // show Pending + anything we just decided (so details remain visible)
     return (inbox || []).filter((r) => (r.status || "Pending") === "Pending" || r._justDecided);
   }, [inbox, showAll]);
 
@@ -140,7 +132,8 @@ export default function EmployeeLeaveApprovals() {
             <table className="leave-table">
               <thead>
                 <tr>
-                  <th>Employee</th>
+                  <th>Employee ID</th>
+                  <th>Employee Name</th>
                   <th>Requester Role</th>
                   <th>From</th>
                   <th>To</th>
@@ -159,6 +152,7 @@ export default function EmployeeLeaveApprovals() {
                   const isPending = status === "Pending";
                   return (
                     <tr key={r._id}>
+                      <td>{emp?.empId || "-"}</td>
                       <td>{emp?.name || "-"}</td>
                       <td>{emp?.role || "-"}</td>
                       <td>{r.fromDate ? new Date(r.fromDate).toLocaleDateString() : "-"}</td>
@@ -209,7 +203,7 @@ export default function EmployeeLeaveApprovals() {
 
                 {!loading && !err && (visibleRows?.length || 0) === 0 && (
                   <tr>
-                    <td colSpan={10} style={{ textAlign: "center", padding: 16 }}>
+                    <td colSpan={11} style={{ textAlign: "center", padding: 16 }}>
                       {showAll ? "No requests." : "No pending Employee requests. 🎉"}
                     </td>
                   </tr>
@@ -222,5 +216,3 @@ export default function EmployeeLeaveApprovals() {
     </>
   );
 }
-
-
